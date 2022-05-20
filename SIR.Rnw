@@ -1,0 +1,126 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.5in,top=1in,bottom=0.75in]{geometry}
+\usepackage{amsmath}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\lhead{USDA: \today}
+\chead{Influenza A Virus: SIR Models}
+\rhead{Jennifer Chang}
+
+\begin{document}
+
+<<,echo=FALSE>>=
+opts_chunk$set(fig.width=4,fig.height=3,size="footnotesize",fig.align='center')
+@
+
+\section*{SIR Models}
+
+\noindent
+The original SIR model was proposed in "Contribution to the Mathematical Theory of Epidemics" William Kermack and Anderson McKendrick, 1927. The population ($N$) is divided into 3 pools: $S$, $I$, and $R$. 
+
+\begin{align*}
+S \rightarrow I \rightarrow R && S(t)&=\text{number that are susceptible at time }t&&s(t)=S(t)/N\\
+ && I(t)&=\text{number that are infected}&&i(t)=I(t)/N\\
+  && R(t)&=\text{number that are recovered or dead}&&r(t)=R(t)/N\\
+\end{align*}
+
+\noindent
+At each timestep, individuals move between the 3 pools. Most papers tend to list the change in $s$, $i$ and $r$ functions, shown below on the left. To actually calculate the next $s$, $i$, $r$ numbers for the next time step ($t+1$) use the functions on the right.
+
+\begin{align*}
+\frac{ds}{dt}&=-\beta si && s(t+1)=s(t)-\beta s(t) i(t)\\
+\frac{di}{dt}&=\beta si - \gamma i && i(t+1)=i(t)+ \beta s(t) i(t) - \gamma i(t)\\ 
+\frac{dr}{dt}&=\gamma i&&r(t+1)= r(t)+\gamma i(t)\\
+\end{align*}
+
+where: 
+
+\begin{align*}
+\beta = \text{rate of infection} &&
+\gamma = \text{rate of recovery}
+\end{align*}
+
+<<,echo=TRUE,message=FALSE>>=
+library(ggplot2)
+library(reshape2)
+library(latex2exp)
+@
+
+\noindent
+To Run the SIR simulation
+<<>>=
+# ===== SIR Model Parameters
+beta=0.50     # rate of infection, infecting contact per day
+gamma=0.2    # rate of recovery, so period of infection is 1/gamma days
+
+# Initial populations of S, I, and R
+init_S=7900000    # Everyone susceptible
+init_I=10         # Some infected
+init_R=0          # No one recovered
+N=init_S+init_I+init_R
+timesteps=137
+
+# ===== Run Simulation
+sim01<-data.frame(t=c(1:timesteps))
+sim01$s[1]=init_S/N
+sim01$i[1]=init_I/N
+sim01$r[1]=init_R/N
+
+for(ii in c(2:timesteps)){
+  sim01$s[ii]=sim01$s[ii-1]-beta*sim01$s[ii-1]*sim01$i[ii-1]
+  sim01$i[ii]=sim01$i[ii-1]+beta*sim01$s[ii-1]*sim01$i[ii-1]-gamma*sim01$i[ii-1]
+  sim01$r[ii]=sim01$r[ii-1]+gamma*sim01$i[ii-1]
+}
+
+# ===== Visualize Result
+msim<-melt(sim01,id.vars=c("t"))
+ggplot(data=msim,aes(x=t,y=value,group=variable,color=variable))+
+  geom_line()+
+  theme_classic()+
+  labs(x="timestep",y="population",title=TeX(sprintf("SIR Simulation ($\\beta = %.2f$, $\\gamma = %.2f$)", beta, gamma)))+
+  scale_y_continuous(breaks=c(0,0.25,0.5,0.75,1),labels=c("0%","25%","50%","75%","100%"))+
+  scale_x_continuous(breaks=c(0:10*20))
+@
+
+An epidemic occurs if the number of infected individuals increases, i.e., $di/dt>0$
+
+\begin{align*}
+\frac{di}{dt}&>0\\
+\beta si - \gamma i &>0\\
+\beta si &> \gamma i \\
+\frac{\beta si}{\gamma} &> i\\
+\frac{\beta s}{\gamma} &> 1
+\end{align*}
+
+Since at the onset of an epidemic, nearly everyone (except the index case) is susceptible, $s \approx 1$
+
+\begin{align*}
+\frac{\beta}{\gamma}=R_0 > 1
+\end{align*}
+
+\noindent
+\textbf{Assumptions of the SIR Model}
+\begin{itemize}
+\item Number of infected increases proportional to both number of infected and susceptible
+\item rate of recovery proportional to number of infected
+\item incubation time is negligible
+\item assume constant population (no births/deaths (outside of recovery))
+\item once an individual is recovered, the person is no longer susceptible and is immune
+\item no inherited immunity
+\item people of the population mix homogeneously (age, gender, race, social status does not affect the probability of a person being affected)
+\end{itemize}
+
+\noindent
+\textbf{Prior to SIR, two of the reasons commonly put forward as accounting for the termination of an epidemic were:}
+
+\begin{itemize}
+\item susceptible individuals have all been removed
+\item during the course of the epidemic the virulence of the causative organism has gradually decreased
+\end{itemize}
+
+\noindent 
+The Kermack and McKendrick SIR Model were refuting those two reasons showing that susceptible indivudals did not have to be removed before an epidemic died out, and the virulence could be held constant.
+
+\end{document}
