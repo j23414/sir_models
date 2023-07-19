@@ -2,6 +2,12 @@
 
 The original SIR model was proposed in ”[Contribution to the Mathematical Theory of Epidemics” William Kermack and Anderson McKendrick](https://doi.org/10.1098/rspa.1927.0118), 1927. The population (N) is divided into 3 pools: S, I, and R.
 
+```mermaid
+flowchart LR
+A[S\nsusceptable] --beta*s*i--> B[I\ninfected]
+B --gamma*i--> C[R\nrecovered]
+```
+
 $$\begin{align*}
 S \rightarrow I \rightarrow R && S(t)&=\text{number that are susceptible at time }t&&s(t)=S(t)/N\\
  && I(t)&=\text{number that are infected}&&i(t)=I(t)/N\\
